@@ -10,6 +10,3 @@
 
 - name: Deploy the app
   include_tasks: deploy.yml
-
-- name: Flush handlers.
-  meta: flush_handlers
