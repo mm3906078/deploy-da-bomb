@@ -1,0 +1,31 @@
+---
+- name: Set build_version
+  delegate_to: localhost
+  set_fact:
+    build_version: "{{ deploy_version if deploy_version is defined else lookup('pipe', 'date +%Y%m%d%H%M%S') }}"
+
+- name: Build the application locally
+  delegate_to: localhost
+  community.docker.docker_image:
+    name: "{{ docker_image_name }}"
+    tag: "{{ build_version }}"
+    build:
+      path: "{{ lookup('env', 'PWD') }}/{{ app_dir }}"
+    source: build
+  register: build_result
+
+- name: Log in to Docker Hub
+  delegate_to: localhost
+  community.docker.docker_login:
+    username: "{{ dockerhub_username }}"
+    password: "{{ dockerhub_token }}"
+    registry_url: "https://index.docker.io/v1/"
+
+- name: Push the image to Docker Hub
+  delegate_to: localhost
+  community.docker.docker_image:
+    name: "{{ docker_image_name }}"
+    tag: "{{ build_version }}"
+    push: true
+    repository: "{{ dockerhub_username }}/{{ docker_image_name }}:{{ build_version }}"
+    source: local

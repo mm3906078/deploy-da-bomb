@@ -1,0 +1,55 @@
+---
+- name: Set deployment version
+  set_fact:
+    deploy_version: "{{ deploy_version | default(build_version) }}"
+
+- name: Log in to Docker Hub
+  community.docker.docker_login:
+    username: "{{ dockerhub_username }}"
+    password: "{{ dockerhub_token }}"
+    registry_url: "https://index.docker.io/v1/"
+
+- name: Pull the Docker image on the target server
+  community.docker.docker_image:
+    name: "{{ dockerhub_username }}/{{ docker_image_name }}"
+    tag: "{{ deploy_version }}"
+    source: pull
+
+- name: Get current image ID of the running container
+  community.docker.docker_container_info:
+    name: "{{ app_container_name }}"
+  register: running_container_info
+  ignore_errors: true
+
+- name: Set current image ID fact
+  set_fact:
+    current_image_id: "{{ running_container_info.container.Image }}"
+  when:
+    - running_container_info.exists is defined
+    - running_container_info.exists
+    - running_container_info.container is defined
+
+- name: Get new image ID
+  community.docker.docker_image_info:
+    name: "{{ dockerhub_username }}/{{ docker_image_name }}:{{ deploy_version }}"
+  register: new_image_info
+
+- name: Determine if container needs to be updated
+  set_fact:
+    container_needs_update: true
+  when: current_image_id is not defined or current_image_id != new_image_info.images[0].Id
+
+- name: Restart container if needed
+  debug:
+    msg: "Container needs to be updated."
+  when:
+    - container_needs_update is defined
+    - container_needs_update
+  changed_when: true
+  notify:
+    - container
+
+- name: No update needed
+  debug:
+    msg: "Container is up to date."
+  when: container_needs_update is not defined

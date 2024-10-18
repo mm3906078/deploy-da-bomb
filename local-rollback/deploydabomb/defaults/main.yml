@@ -1,0 +1,6 @@
+---
+app_dir: "../../code/deploy_da_bomb"
+docker_image_name: "deploy-da-bomb"
+app_container_name: "deploy-da-bomb"
+dockerhub_username: "mrsalehi1380"
+dockerhub_token: "XXX"

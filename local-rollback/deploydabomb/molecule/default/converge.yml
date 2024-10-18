@@ -1,0 +1,28 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+
+  pre_tasks:
+    - name: Update apt and Install pakages
+      apt:
+        update_cache: yes
+        name:
+          - docker.io
+          - python3-pip
+        state: present
+    
+    - name: Install required python packages
+      pip:
+        name:
+          - requests
+        state: present
+
+    - name: Make sure docker service started
+      service:
+        name: docker.service
+        state: started
+
+  roles:
+    - name: Deploy the role
+      role: deploydabomb

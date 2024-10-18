@@ -1,0 +1,15 @@
+---
+- name: Determine if we need to build the image
+  delegate_to: localhost
+  set_fact:
+    build_image: "{{ deploy_version is not defined }}"
+
+- name: Build the app
+  include_tasks: build.yml
+  when: build_image
+
+- name: Deploy the app
+  include_tasks: deploy.yml
+
+- name: Flush handlers.
+  meta: flush_handlers

@@ -1,4 +1,0 @@
----
-app_dir: "code/deploy_da_bomb"
-docker_image_tag: "latest"
-docker_image_name: "app"

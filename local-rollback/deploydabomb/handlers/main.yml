@@ -1,0 +1,14 @@
+---
+- name: Stop the running container
+  community.docker.docker_container:
+    name: "{{ app_container_name }}"
+    state: absent
+  listen: container
+
+- name: Deploy the new Docker container
+  community.docker.docker_container:
+    name: "{{ app_container_name }}"
+    image: "{{ dockerhub_username }}/{{ docker_image_name }}:{{ deploy_version }}"
+    state: started
+    restart_policy: always
+  listen: container
