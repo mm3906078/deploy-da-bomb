@@ -1,0 +1,17 @@
+cat << 'EOF'
+deploy-staging:
+  stage: deploy
+  script:
+    - chmod 400 $MASTER_SSH_KEY
+    - ssh -i $MASTER_SSH_KEY ${MASTER_SSH_USER}@${MASTER_HOST} -p ${MASTER_SSH_port} "sudo docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY""
+    - ssh -i $MASTER_SSH_KEY ${MASTER_SSH_USER}@${MASTER_HOST} -p ${MASTER_SSH_port} "sudo docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
+    - ssh -i $MASTER_SSH_KEY ${MASTER_SSH_USER}@${MASTER_HOST} -p ${MASTER_SSH_port} "sudo docker rm -f $CI_PROJECT_NAME || true"
+    - ssh -i $MASTER_SSH_KEY ${MASTER_SSH_USER}@${MASTER_HOST} -p ${MASTER_SSH_port} "sudo docker run -d --name $CI_PROJECT_NAME -p 80:80 $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
+    - ssh -i $MASTER_SSH_KEY ${MASTER_SSH_USER}@${MASTER_HOST} -p ${MASTER_SSH_port} "sudo docker rmi -f \$(docker images -q ${CI_REGISTRY_IMAGE}) || true"
+  parallel:
+    matrix:
+      - MASTER_HOST:
+EOF
+for host_ip in $MASTER_HOSTS; do
+  echo "        - ${host_ip}";
+done

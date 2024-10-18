@@ -1,0 +1,24 @@
+stages:
+  - build
+  - deploy
+
+build-app:
+  stage: build
+  script:
+    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
+    - docker pull "${CI_REGISTRY_IMAGE}":"${CI_COMMIT_REF_NAME}" || docker pull "${CI_REGISTRY_IMAGE}":"${CI_COMMIT_REF_NAME}" || true
+    - cd code/deploy_da_bomb
+    - docker build --cache-from "${CI_REGISTRY_IMAGE}" --cache-from "${CI_REGISTRY_IMAGE}":"${CI_COMMIT_REF_NAME}" -t "${CI_REGISTRY_IMAGE}":"${CI_COMMIT_SHA:0:8}" .
+    - docker push "${CI_REGISTRY_IMAGE}":"${CI_COMMIT_SHA:0:8}"
+    - docker tag "${CI_REGISTRY_IMAGE}":"${CI_COMMIT_SHA:0:8}" "${CI_REGISTRY_IMAGE}":"${CI_COMMIT_REF_NAME}"
+    - docker push "${CI_REGISTRY_IMAGE}":"${CI_COMMIT_REF_NAME}"
+    - docker logout "${CI_REGISTRY}"
+
+genrate-app:
+  stage: build
+  needs: ["build-app"]
+  script:
+    - source .deployment-ci-configurator > .deploy-gitlab-ci.yml
+  artifacts:
+    paths:
+      - .deploy-gitlab-ci.yml
